@@ -9,9 +9,9 @@ import(
     "strconv"
     )
 
-type Protocol struct {
-    Initiator func(request string) (shouldRun bool)
-    Handler func(request string) (response string, kill bool)
+type Protocol interface {
+    Valid(request string) (shouldRun bool)
+    Handle(request string) (response string, kill bool)
 }
 
 type TCPServer struct {
@@ -78,8 +78,8 @@ func connectionHandler(sharedChan chan *net.TCPConn, killChan chan int, protocol
         message = strings.TrimSpace(message)
 
         for _, protocol := range protocols {
-            if protocol.Initiator(message) {
-                response, kill := protocol.Handler(message)
+            if protocol.Valid(message) {
+                response, kill := protocol.Handle(message)
                 tcpConn.Write([]byte(response))
                 if kill {
                     killChan <- 1

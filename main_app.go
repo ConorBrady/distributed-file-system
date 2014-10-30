@@ -4,8 +4,8 @@ import(
     "flag"
     "log"
     "os"
-    "strconv"
     "./tcpserver"
+    "./baseprotocol"
     )
 
 func main (){
@@ -21,24 +21,8 @@ func main (){
 
     tcpServer := tcpserver.New(os.Getenv("IP_ADDRESS"),*port,*threadCount)
 
-
-    tcpServer.AddProtocol(tcpserver.Protocol{
-        Initiator:func(message string) bool {
-            return len(message) > 5 && message[:5] == "HELO "
-        },
-        Handler:func(message string) (string, bool) {
-            return message+"\nIP:"+os.Getenv("IP_ADDRESS")+"\nPort:"+strconv.Itoa(*port)+"\nStudentID:08506426\n", false
-        },
-    })
-
-    tcpServer.AddProtocol(tcpserver.Protocol{
-        Initiator:func(message string) bool {
-            return message == "KILL_SERVICE"
-        },
-        Handler:func(message string) (string, bool) {
-            return "", true
-        },
-    })
+    tcpServer.AddProtocol(baseprotocol.MakeEcho(os.Getenv("IP_ADDRESS"),*port))
+    tcpServer.AddProtocol(baseprotocol.MakeKill())
 
     tcpServer.BlockingRun()
 }
