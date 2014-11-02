@@ -5,7 +5,7 @@ import(
     "log"
     "os"
     "./tcpserver"
-    "./baseprotocol"
+    "./protocol"
     )
 
 func main (){
@@ -19,10 +19,9 @@ func main (){
         log.Fatal("Must pass port via -port x flag")
     }
 
-    tcpServer := tcpserver.New(os.Getenv("IP_ADDRESS"),*port,*threadCount)
+    tcpServer := tcpserver.MakeTCPServer(os.Getenv("IP_ADDRESS"),*port,*threadCount)
 
-    tcpServer.AddProtocol(baseprotocol.MakeEcho(os.Getenv("IP_ADDRESS"),*port))
-    tcpServer.AddProtocol(baseprotocol.MakeKill())
+    tcpServer.AddProtocol(protocol.MakeHelo(os.Getenv("IP_ADDRESS"),*port))
 
     tcpServer.BlockingRun()
 }

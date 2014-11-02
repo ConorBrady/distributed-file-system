@@ -3,34 +3,33 @@ package tcpserver
 
 import(
     "net"
-    "strings"
     "bufio"
     "log"
     "strconv"
+    "../protocol"
     )
 
-type Protocol interface {
-    Valid(request string) (shouldRun bool)
-    Handle(request string) (response string, kill bool)
-}
-
 type TCPServer struct {
-    protocols []Protocol
+    router *protocol.Router
     tcpAddr *net.TCPAddr
     threadCount int
+    killChan chan int
+    sharedChan chan *net.TCPConn
 }
 
-func New(ip string, port int, threadCount int) *TCPServer{
+func MakeTCPServer(ip string, port int, threadCount int) *TCPServer{
     tcpAddr, _ := net.ResolveTCPAddr("tcp", ip+":"+strconv.Itoa(port))
     return &TCPServer{
-        protocols:make([]Protocol,0),
+        router:protocol.MakeRouter(),
         tcpAddr:tcpAddr,
         threadCount:threadCount,
+        killChan:make(chan int),
+        sharedChan:make(chan *net.TCPConn, threadCount),
     }
 }
 
-func (server* TCPServer) AddProtocol(protocol Protocol) {
-    server.protocols = append(server.protocols,protocol)
+func (server* TCPServer) AddProtocol(p protocol.Protocol) {
+    server.router.AddProtocol(p)
 }
 
 func (server* TCPServer) BlockingRun() {
@@ -41,8 +40,6 @@ func (server* TCPServer) BlockingRun() {
         log.Fatal(err)
     }
 
-    sharedChan := make(chan *net.TCPConn, server.threadCount)
-    killChan := make(chan int)
     tcpChan := make(chan *net.TCPConn)
 
     go func(){
@@ -53,39 +50,57 @@ func (server* TCPServer) BlockingRun() {
     }()
 
     for i := 0; i < server.threadCount; i++ {
-        go connectionHandler(sharedChan,killChan,server.protocols)
+        go server.connectionHandler()
     }
 
+    log.Println("Accepting connections")
     for {
         select {
             case tcpConn := <- tcpChan:
-                select {
-                    case sharedChan <- tcpConn:
-                    default:
-                }
-            case <- killChan:
+                server.sharedChan <- tcpConn
+            case <- server.killChan:
                 return
         }
     }
 }
 
-func connectionHandler(sharedChan chan *net.TCPConn, killChan chan int, protocols []Protocol) {
+func (server *TCPServer) connectionHandler() {
 
     for {
 
-        tcpConn := <- sharedChan
-        message, _ := bufio.NewReader(tcpConn).ReadString('\n')
-        message = strings.TrimSpace(message)
+        tcpConn := <- server.sharedChan
+        reader := bufio.NewReader(tcpConn)
 
-        for _, protocol := range protocols {
-            if protocol.Valid(message) {
-                response, kill := protocol.Handle(message)
-                tcpConn.Write([]byte(response))
-                if kill {
-                    killChan <- 1
-                }
-            }
+        buffer := make([]byte,0)
+
+        for nb, _ := reader.ReadByte(); nb != '\n' && nb != ' ' && nb != '\r'; {
+            buffer = append(buffer,nb)
+            nb, _ = reader.ReadByte()
         }
+
+        ident := string(buffer)
+
+        requestChan := make(chan byte)
+        responseChan := make(chan byte)
+        if ident == "KILL_SERVICE" {
+            server.killChan <- 1
+            log.Println("Killing service")
+            return
+        }
+        log.Println("Routing with ident "+strconv.Quote(ident))
+        server.router.Route(ident,requestChan,responseChan)
+
+        go func(){
+            for nb, err := reader.ReadByte(); err==nil; nb, err = reader.ReadByte(){
+                requestChan <- nb
+            }
+            log.Println("Finished receiving")
+        }()
+        log.Println("Responding")
+        for responseByte := range responseChan {
+            tcpConn.Write([]byte{responseByte})
+        }
+        log.Println("Finished Responding")
 
         tcpConn.Close()
     }
