@@ -57,7 +57,11 @@ func (server* TCPServer) BlockingRun() {
     for {
         select {
             case tcpConn := <- tcpChan:
-                server.sharedChan <- tcpConn
+                select {
+                    case server.sharedChan <- tcpConn:
+                    default: // This is will drop any incoming connections if sharedChan is full
+                }
+
             case <- server.killChan:
                 return
         }
