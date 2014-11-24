@@ -74,38 +74,45 @@ func (server *TCPServer) connectionHandler() {
 
         tcpConn := <- server.sharedChan
         reader := bufio.NewReader(tcpConn)
-
-        buffer := make([]byte,0)
-
-        for nb, _ := reader.ReadByte(); nb != '\n' && nb != ' ' && nb != '\r'; {
-            buffer = append(buffer,nb)
-            nb, _ = reader.ReadByte()
-        }
-
-        ident := string(buffer)
-
-        requestChan := make(chan byte)
         responseChan := make(chan byte)
-        if ident == "KILL_SERVICE" {
-            server.killChan <- 1
-            log.Println("Killing service")
-            return
-        }
-        log.Println("Routing with ident "+strconv.Quote(ident))
-        server.router.Route(ident,requestChan,responseChan)
+        requestChan := make(chan byte)
+
+        go func(){
+            log.Println("Responding")
+            for responseByte := range responseChan {
+                tcpConn.Write([]byte{responseByte})
+            }
+            log.Println("Finished Responding")
+        }()
 
         go func(){
             for nb, err := reader.ReadByte(); err==nil; nb, err = reader.ReadByte(){
                 requestChan <- nb
             }
-            log.Println("Finished receiving")
         }()
-        log.Println("Responding")
-        for responseByte := range responseChan {
-            tcpConn.Write([]byte{responseByte})
-        }
-        log.Println("Finished Responding")
 
+        for {
+            buffer := make([]byte,0)
+
+            for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
+                buffer = append(buffer,nb)
+            }
+
+            ident := string(buffer)
+
+            if ident == "KILL_SERVICE" {
+                server.killChan <- 1
+                log.Println("Killing service")
+                return
+            }
+
+            log.Println("Routing with ident "+strconv.Quote(ident))
+            <- server.router.Route(ident,requestChan,responseChan)
+
+            log.Println("Finished receiving")
+
+        }
+        close(responseChan)
         tcpConn.Close()
     }
 }

@@ -6,6 +6,7 @@ import(
     "os"
     "./tcpserver"
     "./protocol"
+    "./chat"
     )
 
 func main (){
@@ -21,7 +22,12 @@ func main (){
 
     tcpServer := tcpserver.MakeTCPServer(os.Getenv("IP_ADDRESS"),*port,*threadCount)
 
-    tcpServer.AddProtocol(protocol.MakeHelo(os.Getenv("IP_ADDRESS"),*port))
+    chat := chat.MakeChat()
+
+    tcpServer.AddProtocol(protocol.MakeHelo(os.Getenv("IP_ADDRESS"),*port,4))
+    tcpServer.AddProtocol(protocol.MakeChatJoinProtocol(chat,4))
+    tcpServer.AddProtocol(protocol.MakeChatLeaveProtocol(chat,4))
+    tcpServer.AddProtocol(protocol.MakeChatMessageProtocol(chat,4))
 
     tcpServer.BlockingRun()
 }

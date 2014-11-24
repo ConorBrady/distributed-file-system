@@ -2,23 +2,23 @@ package protocol
 
 import(
 	"strconv"
-	"log"
 	)
 
 type Helo struct {
 	ip string
 	port int
-	queue chan *ProtocolPair
+	queue chan *Exchange
 }
 
-func MakeHelo(ip string, port int) *Helo{
+func MakeHelo(ip string, port int, threadCount int) *Helo{
 	e := &Helo{
 		ip,
 		port,
-		make(chan *ProtocolPair),
+		make(chan *Exchange),
 	}
-	go e.runLoop()
-	log.Println("HELO run loop running")
+	for i := 0; i < threadCount; i++ {
+		go e.runLoop()
+	}
 	return e
 }
 
@@ -26,11 +26,14 @@ func (e *Helo) Identifier() string {
 	return "HELO"
 }
 
-func (e *Helo) Handle(request <-chan byte, response chan<- byte) {
-	e.queue <- &ProtocolPair{
+func (e *Helo) Handle(request <-chan byte, response chan<- byte) <-chan int {
+	done := make(chan int)
+	e.queue <- &Exchange{
 		request,
 		response,
+		done,
 	}
+	return done
 }
 
 func (e *Helo) runLoop() {
@@ -48,6 +51,6 @@ func (e *Helo) runLoop() {
 		for _, b := range []byte("\nIP:"+e.ip+"\nPort:"+strconv.Itoa(e.port)+"\nStudentID:08506426\n") {
 			rr.response <- b
 		}
-		close(rr.response)
+		rr.done <- 1
 	}
 }

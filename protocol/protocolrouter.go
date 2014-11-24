@@ -14,33 +14,32 @@ func MakeRouter() *Router {
 	}
 }
 
-func (r *Router) Route(identifier string, request <-chan byte, response chan<- byte) {
+func (r *Router) Route(identifier string, request <-chan byte, response chan<- byte) <-chan int {
 
 	protocol, ok := r.protocols[identifier]
 
 	if ok {
-		log.Println("Found "+identifier+" protocol")
-		protocol.Handle(request,response)
+		return protocol.Handle(request,response)
 	} else {
-		log.Println("Protocol "+identifier+" not found")
-		log.Println("Possible protocols are:")
+
 		for k, _ := range r.protocols {
 			log.Println(k)
 		}
 		close(response)
+		return nil
 	}
 }
 
 func (r *Router) AddProtocol(protocol Protocol) {
+
 	if _, taken := r.protocols[protocol.Identifier()]; taken {
 		log.Fatal("Tried to add protocol "+protocol.Identifier()+" more than once")
 	}
-	log.Println("Adding protocol "+protocol.Identifier())
+
 	r.protocols[protocol.Identifier()] = protocol
-	p, ok := r.protocols[protocol.Identifier()]
-	if ok {
-		log.Println("Successfully added "+p.Identifier())
-	} else {
+
+	_ , ok := r.protocols[protocol.Identifier()]
+	if !ok {
 		log.Fatal("Failed to add protocol "+protocol.Identifier())
 	}
 }
