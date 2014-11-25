@@ -14,19 +14,17 @@ func MakeRouter() *Router {
 	}
 }
 
-func (r *Router) Route(identifier string, request <-chan byte, response chan<- byte) <-chan int {
+func (r *Router) Route(identifier string, request <-chan byte, response chan<- byte) <-chan StatusCode {
 
 	protocol, ok := r.protocols[identifier]
 
 	if ok {
 		return protocol.Handle(request,response)
 	} else {
-
-		for k, _ := range r.protocols {
-			log.Println(k)
-		}
-		close(response)
-		return nil
+		error(ERROR_UNKNOWN_PROTOCOL,response)
+		channel := make(chan StatusCode,1)
+		channel <- STATUS_ERROR
+		return channel
 	}
 }
 

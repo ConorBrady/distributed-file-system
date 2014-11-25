@@ -15,7 +15,7 @@ type ChatLeaveProtocol struct {
 func MakeChatLeaveProtocol(chat *chat.Chat, threadCount int) *ChatLeaveProtocol {
 	p := &ChatLeaveProtocol{
 		chat,
-		make(chan *Exchange),
+		make(chan *Exchange, threadCount),
 	}
 	for i := 0; i < threadCount; i++ {
 		go p.runLoop()
@@ -27,8 +27,8 @@ func (p *ChatLeaveProtocol)Identifier() string {
 	return "LEAVE_CHATROOM"
 }
 
-func (p *ChatLeaveProtocol)Handle(request <-chan byte, response chan<- byte) <-chan int {
-	done := make(chan int)
+func (p *ChatLeaveProtocol)Handle(request <-chan byte, response chan<- byte) <-chan StatusCode {
+	done := make(chan StatusCode, 1)
 	p.queue <- &Exchange{
 		request,
 		response,
@@ -42,25 +42,57 @@ func (p *ChatLeaveProtocol)runLoop() {
 		rr := <- p.queue
 
 		// Line 1 "LEAVE_CHATROOM:"
-		r1, _ := regexp.Compile("^\\s*(\\d*)\\s*$")
+		r1, _ := regexp.Compile("\\A\\s*(\\d+)\\s*\\z")
 		matches1 := r1.FindStringSubmatch(readLine(rr.request))
+		if len(matches1) < 2 {
+			error(ERROR_MALFORMED_REQUEST,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
+		}
 		chatRoomRef, _ := strconv.Atoi(matches1[1])
+		chatRoom, ok1 := p.chat.RoomForRef(chatRoomRef)
+		if !ok1 {
+			error(ERROR_ROOM_NOT_FOUND,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
+		}
 
 		// Line 2 "JOIN_ID:"
-		r2, _ := regexp.Compile("^JOIN_ID:\\s*(\\d*)\\s*$")
+		r2, _ := regexp.Compile("\\AJOIN_ID:\\s*(\\d+)\\s*\\z")
 		matches2 := r2.FindStringSubmatch(readLine(rr.request))
+		if len(matches2) < 2 {
+			error(ERROR_MALFORMED_REQUEST,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
+		}
 		joinId, _ := strconv.Atoi(matches2[1])
+		client, ok2 := chatRoom.ClientForJoinId(joinId)
+		if !ok2 {
+			error(ERROR_JOIN_ID_NOT_FOUND,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
+		}
 
 		// Line 3 "CLIENT_NAME:"
-		r3, _ := regexp.Compile("^CLIENT_NAME:\\s*(.*)\\s*$")
-		clientName := r3.FindStringSubmatch(readLine(rr.request))[1]
-
-		p.chat.LeaveRoom(chatRoomRef,joinId,clientName)
-
-		response := fmt.Sprintf("LEFT_CHATROOM: %d\nJOIN_ID: %d\n",chatRoomRef,joinId)
-		for _, b := range []byte(response) {
-			rr.response <- b
+		r3, _ := regexp.Compile("\\ACLIENT_NAME:\\s*(\\w.*)\\s*\\z")
+		matches3 := r3.FindStringSubmatch(readLine(rr.request))
+		if len(matches3) < 2 {
+			error(ERROR_MALFORMED_REQUEST,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
 		}
-		rr.done <- 1
+		clientName := matches3[1]
+		if clientName != client.Name() {
+			error(ERROR_CLIENT_NAME_MISMATCH,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
+		}
+
+		client.Invalidate()
+
+		sendLine(rr.response,fmt.Sprintf("LEFT_CHATROOM: %d",chatRoomRef))
+		sendLine(rr.response,fmt.Sprintf("JOIN_ID: %d",joinId))
+
+		rr.done <- STATUS_SUCCESS_CONTINUE
 	}
 }

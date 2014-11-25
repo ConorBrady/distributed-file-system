@@ -26,8 +26,8 @@ func (e *Helo) Identifier() string {
 	return "HELO"
 }
 
-func (e *Helo) Handle(request <-chan byte, response chan<- byte) <-chan int {
-	done := make(chan int)
+func (e *Helo) Handle(request <-chan byte, response chan<- byte) <-chan StatusCode {
+	done := make(chan StatusCode)
 	e.queue <- &Exchange{
 		request,
 		response,
@@ -51,6 +51,6 @@ func (e *Helo) runLoop() {
 		for _, b := range []byte("\nIP:"+e.ip+"\nPort:"+strconv.Itoa(e.port)+"\nStudentID:08506426\n") {
 			rr.response <- b
 		}
-		rr.done <- 1
+		rr.done <- STATUS_SUCCESS_CONTINUE
 	}
 }

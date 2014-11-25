@@ -1,8 +1,5 @@
 package chat
 
-import(
-	"strconv"
-	)
 type ChatClient struct {
 	name string
 	connection chan<- byte
@@ -17,11 +14,8 @@ func MakeChatClient(name string, connection chan<- byte) *ChatClient {
 	}
 }
 
-func (c *ChatClient)Send(message string, from string, roomRef int) {
-	message = "CHAT: "+strconv.Itoa(roomRef)+"\nCLIENT_NAME: "+from+"\nMESSAGE: "+message+"\n"
-	for _, b := range []byte(message) {
-		c.connection <- b
-	}
+func (c *ChatClient)Channel() chan<- byte {
+	return c.connection
 }
 
 func (c *ChatClient)Name() string {

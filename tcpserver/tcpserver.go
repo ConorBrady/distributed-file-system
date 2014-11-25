@@ -78,7 +78,6 @@ func (server *TCPServer) connectionHandler() {
         requestChan := make(chan byte)
 
         go func(){
-            log.Println("Responding")
             for responseByte := range responseChan {
                 tcpConn.Write([]byte{responseByte})
             }
@@ -89,9 +88,13 @@ func (server *TCPServer) connectionHandler() {
             for nb, err := reader.ReadByte(); err==nil; nb, err = reader.ReadByte(){
                 requestChan <- nb
             }
+            log.Println("Finished Receiving")
         }()
 
-        for {
+        status := protocol.STATUS_UNDEFINED
+
+        for status != protocol.STATUS_SUCCESS_DISCONNECT {
+
             buffer := make([]byte,0)
 
             for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
@@ -100,19 +103,16 @@ func (server *TCPServer) connectionHandler() {
 
             ident := string(buffer)
 
-            if ident == "KILL_SERVICE" {
-                server.killChan <- 1
-                log.Println("Killing service")
-                return
+            if ident != "" {
+                if ident == "KILL_SERVICE" {
+                    server.killChan <- 1
+                    log.Println("Killing service")
+                    return
+                }
+                status = <- server.router.Route(ident,requestChan,responseChan)
             }
-
-            log.Println("Routing with ident "+strconv.Quote(ident))
-            <- server.router.Route(ident,requestChan,responseChan)
-
-            log.Println("Finished receiving")
-
         }
-        close(responseChan)
+
         tcpConn.Close()
     }
 }

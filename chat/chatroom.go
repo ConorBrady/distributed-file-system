@@ -1,23 +1,21 @@
 package chat
 
 type ClientAdd struct {
-	client ChatClient
+	client *ChatClient
 	response chan<- int
 }
 
 type ChatRoom struct {
 	name string
-	clients []ChatClient
-	roomId int
+	clients []*ChatClient
 	queue chan ClientAdd
 }
 
-func MakeChatRoom(roomName string, roomId int) *ChatRoom {
+func MakeChatRoom(roomName string) *ChatRoom {
 	r := &ChatRoom{
 		roomName,
-		make([]ChatClient,0),
-		roomId,
-		make(chan ClientAdd),
+		make([]*ChatClient,0),
+		make(chan ClientAdd,5),
 	}
 	go func() {
 		for {
@@ -33,22 +31,11 @@ func (r *ChatRoom)Name() string {
 	return r.name
 }
 
-func (r *ChatRoom)Send(message string, from string, omit int) bool {
-
-	if len(r.clients) > omit && r.clients[omit].Name() == from {
-
-		for _, client := range r.clients {
-			if client.Name() != from && client.Valid() {
-				client.Send(message,from,r.roomId)
-			}
-		}
-		return true
-	} else {
-		return false
-	}
+func (r *ChatRoom)Clients() []*ChatClient {
+	return r.clients
 }
 
-func (r *ChatRoom)Add(client ChatClient) <-chan int {
+func (r *ChatRoom)Add(client *ChatClient) <-chan int {
 	channel := make(chan int)
 	r.queue <- ClientAdd{
 		client,
@@ -57,11 +44,10 @@ func (r *ChatRoom)Add(client ChatClient) <-chan int {
 	return channel
 }
 
-func (r *ChatRoom)Remove(joinId int, name string) bool {
-	if len(r.clients) > joinId && r.clients[joinId].Name() == name && r.clients[joinId].Valid() {
-		r.clients[joinId].Invalidate()
-		return true
+func (r *ChatRoom)ClientForJoinId(joinId int) (*ChatClient, bool) {
+	if len(r.clients) > joinId && r.clients[joinId].Valid() {
+		return r.clients[joinId], true
 	} else {
-		return false
+		return &ChatClient{}, false
 	}
 }
