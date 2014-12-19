@@ -42,7 +42,7 @@ func (p *DisconnectProtocol)runLoop() {
 		// Line 1 "DISCONNECT:"
 		r1, _ := regexp.Compile("\\A\\s*0\\s*\\z")
 		if !r1.MatchString(readLine(rr.request)) {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -50,7 +50,7 @@ func (p *DisconnectProtocol)runLoop() {
 		// Line 2 "PORT:"
 		r2, _ := regexp.Compile("\\APORT:\\s*0\\s*\\z")
 		if !r2.MatchString(readLine(rr.request)) {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -58,7 +58,7 @@ func (p *DisconnectProtocol)runLoop() {
 		// Line 3 "CLIENT_NAME:"
 		r3, _ := regexp.Compile("\\ACLIENT_NAME:\\s*(\\w.*)\\s*\\z")
 		if !r3.MatchString(readLine(rr.request)) {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}

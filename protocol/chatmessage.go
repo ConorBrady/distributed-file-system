@@ -45,14 +45,14 @@ func (p *ChatMessageProtocol)runLoop() {
 		r1, _ := regexp.Compile("\\A\\s*(\\d+)\\s*\\z")
 		matches1 := r1.FindStringSubmatch(readLine(rr.request))
 		if len(matches1) < 2 {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
 		chatRoomRef, _ := strconv.Atoi(matches1[1])
 		chatRoom, ok1 := p.chat.RoomForRef(chatRoomRef)
 		if !ok1 {
-			error(ERROR_ROOM_NOT_FOUND,rr.response)
+			respondError(ERROR_ROOM_NOT_FOUND,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -61,7 +61,7 @@ func (p *ChatMessageProtocol)runLoop() {
 		r2, _ := regexp.Compile("\\AJOIN_ID:\\s*(\\d+)\\s*\\z")
 		matches2 := r2.FindStringSubmatch(readLine(rr.request))
 		if len(matches2) < 2 {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -69,7 +69,7 @@ func (p *ChatMessageProtocol)runLoop() {
 
 		client, ok2 := chatRoom.ClientForJoinId(joinId)
 		if !ok2 {
-			error(ERROR_JOIN_ID_NOT_FOUND,rr.response)
+			respondError(ERROR_JOIN_ID_NOT_FOUND,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -78,13 +78,13 @@ func (p *ChatMessageProtocol)runLoop() {
 		r3, _ := regexp.Compile("\\ACLIENT_NAME:\\s*(\\w.*)\\s*\\z")
 		matches3 := r3.FindStringSubmatch(readLine(rr.request))
 		if len(matches3) < 2 {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
 		clientName := matches3[1]
 		if clientName != client.Name() {
-			error(ERROR_CLIENT_NAME_MISMATCH,rr.response)
+			respondError(ERROR_CLIENT_NAME_MISMATCH,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -93,7 +93,7 @@ func (p *ChatMessageProtocol)runLoop() {
 		r4, _ := regexp.Compile("\\AMESSAGE:\\s*(\\w.*)\\s*\\z")
 		matches4 := r4.FindStringSubmatch(readLine(rr.request))
 		if len(matches4) < 2 {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}

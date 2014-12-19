@@ -29,6 +29,8 @@ func main (){
     tcpServer.AddProtocol(protocol.MakeChatLeaveProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeChatMessageProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeDisconnectProtocol(chat,1))
+    tcpServer.AddProtocol(protocol.MakeFileReadProtocol(4))
+    tcpServer.AddProtocol(protocol.MakeFileWriteProtocol(4))
 
     tcpServer.BlockingRun()
 }

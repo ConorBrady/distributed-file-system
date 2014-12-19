@@ -44,7 +44,7 @@ func (p *ChatJoinProtocol)runLoop() {
 		r1, _ := regexp.Compile("\\A\\s*(\\w+.*)\\s*\\z")
 		matches1 := r1.FindStringSubmatch(readLine(rr.request))
 		if len(matches1) < 2 {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -53,7 +53,7 @@ func (p *ChatJoinProtocol)runLoop() {
 		// Line 2 "CLIENT_IP: 0"
 		r2, _ := regexp.Compile("\\ACLIENT_IP:\\s*0\\s*\\z")
 		if !r2.MatchString(readLine(rr.request)) {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -61,7 +61,7 @@ func (p *ChatJoinProtocol)runLoop() {
 		// Line 3 "PORT: 0"
 		r3, _ := regexp.Compile("\\APORT:\\s*0\\s*\\z")
 		if !r3.MatchString(readLine(rr.request)) {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
@@ -70,7 +70,7 @@ func (p *ChatJoinProtocol)runLoop() {
 		r4, _ := regexp.Compile("\\ACLIENT_NAME:\\s*(\\w+.*)\\s*\\z")
 		matches4 := r4.FindStringSubmatch(readLine(rr.request))
 		if len(matches4) < 2 {
-			error(ERROR_MALFORMED_REQUEST,rr.response)
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
