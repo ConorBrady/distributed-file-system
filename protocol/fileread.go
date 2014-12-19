@@ -3,8 +3,8 @@ package protocol
 import(
 	"regexp"
 	"os"
+	"fmt"
 	"bufio"
-	"encoding/base64"
 	"encoding/hex"
 	"crypto/sha256"
 	)
@@ -64,17 +64,17 @@ func (p *FileReadProtocol)runLoop() {
 			continue
 		}
 
-		send(rr.response,"CONTENT_BASE64:")
-		writer := base64.NewEncoder(base64.StdEncoding,MakeChannelWriter(rr.response))
+		fi, _ := file.Stat()
+
+		sendLine(rr.response,fmt.Sprintf("CONTENT_LENGTH: %d",fi.Size()))
 
 		reader := bufio.NewReader(file)
 		b, err := reader.ReadByte()
 
 		for err == nil {
-			writer.Write([]byte{b})
+			rr.response <- b
 			b, err = reader.ReadByte()
 		}
-		writer.Write([]byte{b})
 
 		sendLine(rr.response,"")
 		rr.done <- STATUS_SUCCESS_CONTINUE

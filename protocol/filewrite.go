@@ -3,10 +3,9 @@ package protocol
 import(
 	"regexp"
 	"os"
-	"io"
-	"fmt"
 	"encoding/hex"
 	"crypto/sha256"
+	"strconv"
 	)
 
 	type FileWriteProtocol struct {
@@ -70,41 +69,13 @@ import(
 
 			// Body, read contentLength bytes
 
-			for i := 0; i <= (contentLength >> 7); i++ {
-				file.Write(readByteCount(rr.request,(contentLength-(i<<7))%(1<<7)))
+			for i := 0; i < (contentLength / 128); i++ {
+				file.Write(readByteCount(rr.request,128))
 			}
-			// if read(rr.request,':') != "CONTENT_BASE64" {
-			// 	respondError(ERROR_MALFORMED_REQUEST,rr.response)
-			// 	rr.done <- STATUS_ERROR
-			// 	continue
-			// }
-			//
-			// decoder := base64.NewDecoder(base64.StdEncoding,MakeChannelReader(rr.request))
-			//
-			// buffer := make([]byte,48)
-			// n, errDec := decoder.Read(buffer)
-			//
-			// for errDec == nil {
-			// 	_, err := file.Write(buffer[:n])
-			// 	fmt.Println("Writing "+string(buffer[:n]))
-			// 	if err != nil {
-			// 		fmt.Println(err.Error())
-			// 	}
-			// 	fmt.Println(n)
-			// 	if n < len(buffer) {
-			// 		break
-			// 	}
-			// 	n, errDec = decoder.Read(buffer)
-			// }
+
+			file.Write(readByteCount(rr.request,contentLength%128))
 
 			file.Close()
-
-			if errDec != nil && errDec != io.EOF {
-				respondError(ERROR_MALFORMED_REQUEST,rr.response)
-				os.Remove(tempFileName)
-				rr.done <- STATUS_ERROR
-				continue
-			}
 
 			os.Rename(tempFileName,"storage/"+mdStr)
 

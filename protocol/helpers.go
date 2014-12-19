@@ -20,11 +20,11 @@ func readByteCount(input <-chan byte, count int) []byte {
 	token := make([]byte,0)
 	i := 0
 	for msgByte := range input {
+		token = append(token,msgByte)
+		i += 1
 		if(i==count) {
 			break
 		}
-		token = append(token,msgByte)
-		i += 1
 	}
 	return token
 }
