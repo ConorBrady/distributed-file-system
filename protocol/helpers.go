@@ -16,6 +16,18 @@ func read(input <-chan byte, delim byte) string {
 	return string(token)
 }
 
+func readByteCount(input <-chan byte, count int) []byte {
+	token := make([]byte,0)
+	i := 0
+	for msgByte := range input {
+		if(i==count) {
+			break
+		}
+		token = append(token,msgByte)
+		i += 1
+	}
+	return token
+}
 
 func readLine(input <-chan byte) string {
 	return read(input,'\n')

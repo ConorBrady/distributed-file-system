@@ -58,31 +58,44 @@ import(
 			tempFileName := "tmp/"+mdStr
 			file, _ := os.Create(tempFileName)
 
-			// Line 2 "CONTENT_BASE64:"
-
-			if read(rr.request,':') != "CONTENT_BASE64" {
+			// Line 2 "CONTENT_LENGTH:"
+			r2, _ := regexp.Compile("\\ACONTENT_LENGTH:\\s*(\\d+)\\s*\\z")
+			matches2 := r2.FindStringSubmatch(readLine(rr.request))
+			if len(matches2) < 2 {
 				respondError(ERROR_MALFORMED_REQUEST,rr.response)
 				rr.done <- STATUS_ERROR
 				continue
 			}
+			contentLength, _ := strconv.Atoi(matches2[1])
 
-			decoder := base64.NewDecoder(base64.StdEncoding,MakeChannelReader(rr.request))
+			// Body, read contentLength bytes
 
-			buffer := make([]byte,48)
-			n, errDec := decoder.Read(buffer)
-
-			for errDec == nil {
-				_, err := file.Write(buffer[:n])
-				fmt.Println("Writing "+string(buffer[:n]))
-				if err != nil {
-					fmt.Println(err.Error())
-				}
-				fmt.Println(n)
-				if n < len(buffer) {
-					break
-				}
-				n, errDec = decoder.Read(buffer)
+			for i := 0; i <= (contentLength >> 7); i++ {
+				file.Write(readByteCount(rr.request,(contentLength-(i<<7))%(1<<7)))
 			}
+			// if read(rr.request,':') != "CONTENT_BASE64" {
+			// 	respondError(ERROR_MALFORMED_REQUEST,rr.response)
+			// 	rr.done <- STATUS_ERROR
+			// 	continue
+			// }
+			//
+			// decoder := base64.NewDecoder(base64.StdEncoding,MakeChannelReader(rr.request))
+			//
+			// buffer := make([]byte,48)
+			// n, errDec := decoder.Read(buffer)
+			//
+			// for errDec == nil {
+			// 	_, err := file.Write(buffer[:n])
+			// 	fmt.Println("Writing "+string(buffer[:n]))
+			// 	if err != nil {
+			// 		fmt.Println(err.Error())
+			// 	}
+			// 	fmt.Println(n)
+			// 	if n < len(buffer) {
+			// 		break
+			// 	}
+			// 	n, errDec = decoder.Read(buffer)
+			// }
 
 			file.Close()
 
