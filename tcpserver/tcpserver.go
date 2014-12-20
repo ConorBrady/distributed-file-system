@@ -6,7 +6,7 @@ import(
     "bufio"
     "log"
     "strconv"
-    "../protocol"
+    "distributed-file-system/protocol"
     )
 
 type TCPServer struct {

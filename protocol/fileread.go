@@ -5,8 +5,7 @@ import(
 	"os"
 	"fmt"
 	"bufio"
-	"encoding/hex"
-	"crypto/sha256"
+	"net/url"
 	)
 
 type FileReadProtocol struct {
@@ -50,12 +49,7 @@ func (p *FileReadProtocol)runLoop() {
 			continue
 		}
 
-		hash := sha256.New()
-		hash.Write([]byte(matches1[1]))
-		md := hash.Sum(nil)
-		mdStr := hex.EncodeToString(md)
-
-		fileName := "storage/"+mdStr
+		fileName := os.Getenv("GOPATH")+"/src/distributed-file-system/storage/"+url.QueryEscape(matches1[1])
 		file, ok1 := os.Open(fileName)
 
 		if ok1 != nil {

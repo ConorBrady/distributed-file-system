@@ -4,9 +4,10 @@ import(
     "flag"
     "log"
     "os"
-    "./tcpserver"
-    "./protocol"
-    "./chat"
+
+    "distributed-file-system/chat"
+    "distributed-file-system/protocol"
+    "distributed-file-system/tcpserver"
     )
 
 func main (){
@@ -25,12 +26,16 @@ func main (){
     chat := chat.MakeChat()
 
     tcpServer.AddProtocol(protocol.MakeHelo(os.Getenv("IP_ADDRESS"),*port,4))
+
     tcpServer.AddProtocol(protocol.MakeChatJoinProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeChatLeaveProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeChatMessageProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeDisconnectProtocol(chat,1))
+
     tcpServer.AddProtocol(protocol.MakeFileReadProtocol(4))
     tcpServer.AddProtocol(protocol.MakeFileWriteProtocol(4))
+
+    tcpServer.AddProtocol(protocol.MakeLoginUserProtocol(4))
 
     tcpServer.BlockingRun()
 }

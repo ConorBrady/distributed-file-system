@@ -18,6 +18,7 @@ const (
 	ERROR_CLIENT_NAME_MISMATCH ErrorCode = 3
 	ERROR_JOIN_ID_NOT_FOUND ErrorCode = 4
 	ERROR_FILE_NOT_FOUND = 5
+	ERROR_USER_NOT_FOUND = 6
 )
 
 type Protocol interface {

@@ -3,9 +3,10 @@ package protocol
 import(
 	"regexp"
 	"os"
-	"encoding/hex"
-	"crypto/sha256"
+	"fmt"
+	"net/url"
 	"strconv"
+	"code.google.com/p/go-uuid/uuid"
 	)
 
 	type FileWriteProtocol struct {
@@ -49,12 +50,9 @@ import(
 				continue
 			}
 
-			hash := sha256.New()
-			hash.Write([]byte(matches1[1]))
-			md := hash.Sum(nil)
-			mdStr := hex.EncodeToString(md)
 
-			tempFileName := "tmp/"+mdStr
+			tempFileName := os.Getenv("GOPATH")+"/src/distributed-file-system/tmp/"+uuid.New()
+			fmt.Println(tempFileName)
 			file, _ := os.Create(tempFileName)
 
 			// Line 2 "CONTENT_LENGTH:"
@@ -77,7 +75,7 @@ import(
 
 			file.Close()
 
-			os.Rename(tempFileName,"storage/"+mdStr)
+			os.Rename(tempFileName,os.Getenv("GOPATH")+"/src/distributed-file-system/storage/"+url.QueryEscape(matches1[1]))
 
 			sendLine(rr.response,"SUCCESS")
 

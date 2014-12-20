@@ -3,6 +3,7 @@ package protocol
 import (
 	"fmt"
 	"io"
+	"runtime/debug"
 )
 
 func read(input <-chan byte, delim byte) string {
@@ -89,6 +90,7 @@ func (c* ChannelReader)Read(p []byte) (n int, err error) {
 
 func respondError(errorCode ErrorCode, output chan<- byte) {
 	sendLine(output,fmt.Sprintf("ERROR_CODE: %d",errorCode))
+	debug.PrintStack()
 	switch errorCode {
 		case ERROR_MALFORMED_REQUEST:
 			sendLine(output,"ERROR_DESCRIPTION: MALFORMED REQUEST")
@@ -102,5 +104,7 @@ func respondError(errorCode ErrorCode, output chan<- byte) {
 			sendLine(output,"ERROR_DESCRIPTION: JOIN ID NOT FOUND")
 		case ERROR_FILE_NOT_FOUND:
 			sendLine(output,"ERROR_DESCRIPTION: FILE NOT FOUND")
+		case ERROR_USER_NOT_FOUND:
+			sendLine(output,"ERROR_DESCRIPTION: USER NOT FOUND")
 	}
 }

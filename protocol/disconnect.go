@@ -2,7 +2,7 @@ package protocol
 
 import(
 	"regexp"
-	"../chat"
+	"distributed-file-system/chat"
 )
 
 type DisconnectProtocol struct {
