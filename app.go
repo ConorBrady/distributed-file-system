@@ -35,7 +35,7 @@ func main (){
     tcpServer.AddProtocol(protocol.MakeFileReadProtocol(4))
     tcpServer.AddProtocol(protocol.MakeFileWriteProtocol(4))
 
-    tcpServer.AddProtocol(protocol.MakeLoginUserProtocol(4))
+    tcpServer.AddProtocol(protocol.MakeAuthenticationProtocol(4))
 
     tcpServer.BlockingRun()
 }
