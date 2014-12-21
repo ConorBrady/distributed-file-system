@@ -3,6 +3,7 @@ package auth
 import (
 	"os"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
+	"crypto/sha256"
 	)
 
 type User struct {
@@ -36,4 +37,9 @@ func GetUser(username string) *User{
 		username,
 		password,
 	}
+}
+
+func (u* User)getAESKey() []byte {
+	key := sha256.Sum256([]byte(u.password))
+	return key[:]
 }
