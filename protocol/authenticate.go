@@ -2,7 +2,7 @@ package protocol
 
 import (
 	"regexp"
-	"distributed-file-system/auth"
+	"distributed-file-system/auth/authentication"
 	"encoding/base64"
 	)
 
@@ -47,7 +47,7 @@ func (e *AuthenticationProtocol) runLoop() {
 			continue
 		}
 
-		user := auth.GetUser(matches1[1])
+		user := authentication.GetUser(matches1[1])
 
 		if user == nil {
 			respondError(ERROR_USER_NOT_FOUND,rr.response)
@@ -55,7 +55,7 @@ func (e *AuthenticationProtocol) runLoop() {
 			continue
 		}
 
-		sessionKey := auth.GetASSessionKey(*user)
+		sessionKey := authentication.GetSessionKey(*user)
 
 		sendLine(rr.response,"ENCRYPTED_SESSION_KEY: " + base64.StdEncoding.EncodeToString(sessionKey.EncryptedKey()))
 		sendLine(rr.response,"SERVICE_TICKET: "+base64.StdEncoding.EncodeToString(sessionKey.MarshalAndEncrypt()))

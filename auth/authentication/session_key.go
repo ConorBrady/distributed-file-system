@@ -1,25 +1,24 @@
-package auth
+package authentication
 
 import (
 	"os"
 	"fmt"
 	"time"
 	"crypto/rand"
-	"math"
-	"crypto/aes"
+	"distributed-file-system/auth/crypto"
 	"encoding/base64"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
 	)
 
-type ASSessionKey struct {
+type SessionKey struct {
 	key []byte
 	user User
 	expiry time.Time
 }
 
-func GetASSessionKey(user User) *ASSessionKey {
+func GetSessionKey(user User) *SessionKey {
 
-	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/auth.sqlite")
+	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/auth.sqlite")
 
 	nowBytes, _ := time.Now().MarshalText()
 
@@ -39,7 +38,7 @@ func GetASSessionKey(user User) *ASSessionKey {
 
 		expiry, _ := time.Parse(time.RFC3339, expiryStr)
 
-		return &ASSessionKey{
+		return &SessionKey{
 			key,
 			user,
 			expiry,
@@ -63,7 +62,7 @@ func GetASSessionKey(user User) *ASSessionKey {
 		createErr := db.Exec( "insert into session_keys ( user_id, key, expiry ) values ( $user_id, $key, $expiry )", insertArgs )
 
 		if createErr == nil {
-			return &ASSessionKey{
+			return &SessionKey{
 				key,
 				user,
 				expiry,
@@ -75,18 +74,12 @@ func GetASSessionKey(user User) *ASSessionKey {
 	}
 }
 
-func (s* ASSessionKey)EncryptedKey() []byte {
+func (s* SessionKey)EncryptedKey() []byte {
 
-	encKey := make([]byte,32)
-
-	cipherBlock, _ := aes.NewCipher(s.user.getAESKey())
-	cipherBlock.Encrypt(encKey[0:16], s.key[0:16])
-	cipherBlock.Encrypt(encKey[16:32],s.key[16:32])
-
-	return encKey
+	return crypto.EncryptBytes(s.key,s.user.getAESKey())
 }
 
-func (s* ASSessionKey)MarshalAndEncrypt() []byte {
+func (s* SessionKey)MarshalAndEncrypt() []byte {
 
 	expiryBytes, _ := s.expiry.MarshalText()
 
@@ -94,26 +87,12 @@ func (s* ASSessionKey)MarshalAndEncrypt() []byte {
 				  	"USERNAME: "+s.user.username+"\n"+
 					"EXPIRES_AT: "+string(expiryBytes)+"\n"
 
-	packageBytes := make([]byte,int(math.Ceil(float64(len(packageStr))/16.0))*16)
-
-	for i, b := range packageStr {
-		packageBytes[i] = byte(b)
-	}
-
-	keyFile, _ := os.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/private.key")
+	keyFile, _ := os.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/private.key")
 
 	privateKey := make([]byte,32)
 	keyFile.Read(privateKey)
 
 	keyFile.Close()
 
-	cipherBlock, _ := aes.NewCipher(privateKey)
-
-	encryptedPackage := make([]byte,len(packageBytes))
-
-	for i := 0; i < len(packageBytes); i += aes.BlockSize {
-		cipherBlock.Encrypt(encryptedPackage[i:i+aes.BlockSize], packageBytes[i:i+aes.BlockSize])
-	}
-
-	return encryptedPackage
+	return crypto.EncryptString(packageStr,privateKey)
 }

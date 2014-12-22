@@ -1,9 +1,10 @@
-package auth
+package authentication
 
 import (
 	"os"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
 	"crypto/sha256"
+	"strings"
 	)
 
 type User struct {
@@ -14,7 +15,7 @@ type User struct {
 
 func GetUser(username string) *User{
 
-	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/auth.sqlite")
+	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/auth.sqlite")
 
 	args := sqlite3.NamedArgs{
 		"$username": username,
@@ -40,6 +41,6 @@ func GetUser(username string) *User{
 }
 
 func (u* User)getAESKey() []byte {
-	key := sha256.Sum256([]byte(u.password))
+	key := sha256.Sum256([]byte(strings.TrimSpace(u.password)))
 	return key[:]
 }

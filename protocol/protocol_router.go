@@ -21,6 +21,7 @@ func (r *Router) Route(identifier string, request <-chan byte, response chan<- b
 	if ok {
 		return protocol.Handle(request,response)
 	} else {
+		log.Println("Unknown token "+ identifier)
 		respondError(ERROR_UNKNOWN_PROTOCOL,response)
 		channel := make(chan StatusCode,1)
 		channel <- STATUS_ERROR

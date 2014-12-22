@@ -32,10 +32,13 @@ func main (){
     tcpServer.AddProtocol(protocol.MakeChatMessageProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeDisconnectProtocol(chat,1))
 
-    tcpServer.AddProtocol(protocol.MakeFileReadProtocol(4))
-    tcpServer.AddProtocol(protocol.MakeFileWriteProtocol(4))
-
     tcpServer.AddProtocol(protocol.MakeAuthenticationProtocol(4))
+
+    securityProtocol := protocol.MakeServiceSecurityProtocol(4)
+    securityProtocol.AddProtocol(protocol.MakeFileReadProtocol(4))
+    securityProtocol.AddProtocol(protocol.MakeFileWriteProtocol(4))
+
+    tcpServer.AddProtocol(securityProtocol)
 
     tcpServer.BlockingRun()
 }
