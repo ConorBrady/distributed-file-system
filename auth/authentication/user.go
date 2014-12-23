@@ -1,7 +1,6 @@
 package authentication
 
 import (
-	"os"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
 	"crypto/sha256"
 	"strings"
@@ -13,15 +12,38 @@ type User struct {
 	password string
 }
 
-func GetUser(username string) *User{
+func getUsers() []User {
 
-	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/auth.sqlite")
+	users := make([]User, 0)
+	query, qErr := dbConnect().Query("select user_id, username, password from users")
+
+	for qErr == nil {
+
+		var password string
+		var username string
+		var userId int
+
+		query.Scan(&userId,&username,&password)
+
+		users = append(users, User{
+			userId,
+			username,
+			password,
+		})
+
+		qErr = query.Next()
+	}
+
+	return users
+}
+
+func GetUser(username string) *User{
 
 	args := sqlite3.NamedArgs{
 		"$username": username,
 	}
 
-	query, qErr := db.Query("select user_id, password from users where username=$username", args)
+	query, qErr := dbConnect().Query("select user_id, password from users where username=$username", args)
 
 	if qErr != nil {
 		return nil
@@ -37,6 +59,33 @@ func GetUser(username string) *User{
 		userId,
 		username,
 		password,
+	}
+}
+
+func createUser(username string, password string) *User {
+
+	args := sqlite3.NamedArgs{
+		"$username": username,
+		"$password": password,
+	}
+
+	dbConnect().Exec("insert into users ( username, password ) values ( $username, $password )", args)
+
+	return GetUser(username)
+}
+
+func deleteUser(username string) {
+
+	user := GetUser(username)
+
+	if user != nil {
+		args := sqlite3.NamedArgs{
+			"$user_id": user.userId,
+		}
+
+		dbConnect().Exec("delete from users where user_id = $user_id", args)
+
+		dbConnect().Exec("delete from session_keys where user_id = $user_id",args)
 	}
 }
 

@@ -18,8 +18,6 @@ type SessionKey struct {
 
 func GetSessionKey(user User) *SessionKey {
 
-	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/auth.sqlite")
-
 	nowBytes, _ := time.Now().MarshalText()
 
 	queryArgs := sqlite3.NamedArgs{
@@ -27,7 +25,7 @@ func GetSessionKey(user User) *SessionKey {
 		"$now" : string(nowBytes),
 	}
 
-	query, qErr := db.Query("select key, expiry from session_keys where user_id = $user_id and expiry > $now", queryArgs)
+	query, qErr := dbConnect().Query("select key, expiry from session_keys where user_id = $user_id and expiry > $now", queryArgs)
 
 	if qErr == nil {
 
@@ -59,7 +57,7 @@ func GetSessionKey(user User) *SessionKey {
 			"$expiry"	: string(expiryBytes),
 		}
 
-		createErr := db.Exec( "insert into session_keys ( user_id, key, expiry ) values ( $user_id, $key, $expiry )", insertArgs )
+		createErr := dbConnect().Exec( "insert into session_keys ( user_id, key, expiry ) values ( $user_id, $key, $expiry )", insertArgs )
 
 		if createErr == nil {
 			return &SessionKey{

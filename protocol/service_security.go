@@ -120,23 +120,26 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		go func() {
 			for !stop {
-				line := readLine(responseChan)
-				enc := crypto.EncryptString(line,sessionKey.Key())
-				for _, responseByte := range []byte(base64.StdEncoding.EncodeToString(enc)) {
-					rr.response <- responseByte
-					fmt.Print(responseByte)
+				data := make([]byte,16)
+				for i, _ := range data {
+					b := <-responseChan
+					data[i] = b
+
+					if b == '\n' {
+						break
+					}
 				}
-				rr.response <- '\n'
-				fmt.Print('\n')
+				enc := crypto.EncryptBytes(data,sessionKey.Key())
+				sendLine(rr.response,base64.StdEncoding.EncodeToString(enc)+"\n")
 			}
 		}()
 
 		go func() {
 
 			for !stop {
-				encryptedData, _ := base64.StdEncoding.DecodeString(readLine(rr.request))
+				enc, _ := base64.StdEncoding.DecodeString(readLine(rr.request))
+				for _, b := range crypto.DecryptToBytes(enc,sessionKey.Key()) {
 
-				for _, b := range []byte(crypto.DecryptToString(encryptedData,sessionKey.Key())) {
 					requestChan <- b
 				}
 			}
@@ -145,8 +148,6 @@ func (e *ServiceSecurityProtocol) runLoop() {
 		status := STATUS_UNDEFINED
 
 		for status != STATUS_SUCCESS_DISCONNECT {
-
-			log.Println("Secure channel entered")
 
 			buffer := make([]byte,0)
 

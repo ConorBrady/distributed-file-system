@@ -30,8 +30,7 @@ func EncryptBytes(data []byte, key []byte) []byte {
 	return enc
 }
 
-func DecryptToString(enc []byte, key []byte) string {
-
+func DecryptToBytes(enc []byte, key []byte) []byte {
 	data := make([]byte,len(enc))
 
 	cipherBlock, _ := aes.NewCipher(key)
@@ -40,5 +39,9 @@ func DecryptToString(enc []byte, key []byte) string {
 		cipherBlock.Decrypt(data[i:i+aes.BlockSize], enc[i:i+aes.BlockSize])
 	}
 
-	return string(bytes.Trim(data,"\x00"))
+	return bytes.Trim(data,"\x00")
+}
+
+func DecryptToString(enc []byte, key []byte) string {
+	return string(DecryptToBytes(enc,key))
 }

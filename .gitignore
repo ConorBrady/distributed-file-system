@@ -2,3 +2,4 @@
 main_app
 storage/*
 tmp/*
+*.sqlite

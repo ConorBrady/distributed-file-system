@@ -73,6 +73,9 @@ func (server *TCPServer) connectionHandler() {
     for {
 
         tcpConn := <- server.sharedChan
+
+        log.Println("New connection")
+
         reader := bufio.NewReader(tcpConn)
         responseChan := make(chan byte)
         requestChan := make(chan byte)
@@ -81,14 +84,12 @@ func (server *TCPServer) connectionHandler() {
             for responseByte := range responseChan {
                 tcpConn.Write([]byte{responseByte})
             }
-            log.Println("Finished Responding")
         }()
 
         go func(){
             for nb, err := reader.ReadByte(); err==nil; nb, err = reader.ReadByte(){
                 requestChan <- nb
             }
-            log.Println("Finished Receiving")
         }()
 
         status := protocol.STATUS_UNDEFINED
