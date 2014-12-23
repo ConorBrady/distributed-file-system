@@ -45,11 +45,15 @@ func (e *ServiceSecurityProtocol) Handle(request <-chan byte, response chan<- by
 }
 
 func (e *ServiceSecurityProtocol) runLoop() {
+
 	for {
+
 		rr := <- e.queue
 
 		fmt.Println("Started service ticket")
+
 		// "SERVICE_TICKET:"
+
 		r1, _ := regexp.Compile("\\A\\s*(\\S+)\\s*\\z")
 		line1 := readLine(rr.request)
 		matches1 := r1.FindStringSubmatch(line1)
@@ -112,6 +116,8 @@ func (e *ServiceSecurityProtocol) runLoop() {
 		}
 
 		sendLine(rr.response,"RESPONSE: " + base64.StdEncoding.EncodeToString(authenticator.MakeResponse(sessionKey.Key())))
+
+		// HANDLES ENCRYPTION HERE
 
 		requestChan := make(chan byte)
 		responseChan := make(chan byte)
