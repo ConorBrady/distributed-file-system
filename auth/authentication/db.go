@@ -8,7 +8,8 @@ import (
 
 func dbConnect() *sqlite3.Conn {
 
-	db, _ := sqlite3.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/auth.sqlite")
+	wd, _ := os.Getwd()
+	db, _ := sqlite3.Open(wd+"/auth.sqlite")
 
 	userCheck := 		"CREATE TABLE IF NOT EXISTS users(" +
 							"user_id 	INTEGER PRIMARY KEY, "+
