@@ -5,6 +5,7 @@ import(
 	"os"
 	"fmt"
 	"bufio"
+	"log"
 	"net/url"
 	)
 
@@ -40,16 +41,19 @@ func (p *FileReadProtocol)runLoop() {
 	for {
 		rr := <- p.queue
 
+		line := readLine(rr.request)
+		log.Println("READ_FILE:"+line)
+
 		// Line 1 "READ_FILE:"
 		r1, _ := regexp.Compile("\\A\\s*(\\S+)\\s*\\z")
-		matches1 := r1.FindStringSubmatch(readLine(rr.request))
+		matches1 := r1.FindStringSubmatch(line)
 		if len(matches1) < 2 {
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
 
-		fileName := os.Getenv("GOPATH")+"/src/distributed-file-system/storage/"+url.QueryEscape(matches1[1])
+		fileName := "storage/"+url.QueryEscape(matches1[1])
 		file, ok1 := os.Open(fileName)
 
 		if ok1 != nil {

@@ -1,15 +1,13 @@
 package authentication
 
 import (
-	"os"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
 	"log"
 	)
 
 func dbConnect() *sqlite3.Conn {
 
-	wd, _ := os.Getwd()
-	db, _ := sqlite3.Open(wd+"/auth.sqlite")
+	db, _ := sqlite3.Open("auth.sqlite")
 
 	userCheck := 		"CREATE TABLE IF NOT EXISTS users(" +
 							"user_id 	INTEGER PRIMARY KEY, "+

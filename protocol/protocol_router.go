@@ -16,6 +16,7 @@ func MakeRouter() *Router {
 
 func (r *Router) Route(identifier string, request <-chan byte, response chan<- byte) <-chan StatusCode {
 
+	log.Println("Routing with ident "+identifier )
 	protocol, ok := r.protocols[identifier]
 
 	if ok {

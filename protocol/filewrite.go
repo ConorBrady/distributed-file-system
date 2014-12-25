@@ -3,7 +3,7 @@ package protocol
 import(
 	"regexp"
 	"os"
-	"fmt"
+	"log"
 	"net/url"
 	"strconv"
 	"code.google.com/p/go-uuid/uuid"
@@ -41,18 +41,27 @@ import(
 		for {
 			rr := <- p.queue
 
+			line := readLine(rr.request)
+			log.Println("WRITE_FILE:"+line)
 			// Line 1 "WRITE_FILE:"
 			r1, _ := regexp.Compile("\\A\\s*(\\S+)\\s*\\z")
-			matches1 := r1.FindStringSubmatch(readLine(rr.request))
+			matches1 := r1.FindStringSubmatch(line)
 			if len(matches1) < 2 {
 				respondError(ERROR_MALFORMED_REQUEST,rr.response)
 				rr.done <- STATUS_ERROR
 				continue
 			}
 
+			if err := os.Mkdir("tmp", 0777); err != nil {
+				log.Println(err.Error())
+			}
 
-			tempFileName := os.Getenv("GOPATH")+"/src/distributed-file-system/tmp/"+uuid.New()
-			fmt.Println(tempFileName)
+			if err := os.Mkdir("storage", 0777); err != nil {
+				log.Println(err.Error())
+			}
+
+			tempFileName := "tmp/"+uuid.New()
+			log.Println(tempFileName)
 			file, _ := os.Create(tempFileName)
 
 			// Line 2 "CONTENT_LENGTH:"
@@ -75,7 +84,9 @@ import(
 
 			file.Close()
 
-			os.Rename(tempFileName,os.Getenv("GOPATH")+"/src/distributed-file-system/storage/"+url.QueryEscape(matches1[1]))
+			os.Rename(tempFileName,"storage/"+url.QueryEscape(matches1[1]))
+
+			log.Println("Wrote "+matches1[1])
 
 			sendLine(rr.response,"SUCCESS")
 

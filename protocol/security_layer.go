@@ -6,18 +6,19 @@ import (
 	"distributed-file-system/auth/service"
 	"distributed-file-system/auth/crypto"
 	"encoding/base64"
-	"fmt"
-	)
+)
 
 type ServiceSecurityProtocol struct {
 	queue chan *Exchange
 	router *Router
+	keyPath string
 }
 
-func MakeServiceSecurityProtocol(threadCount int) *ServiceSecurityProtocol{
+func MakeServiceSecurityProtocol(threadCount int, keyPath string) *ServiceSecurityProtocol{
 	e := &ServiceSecurityProtocol{
 		make(chan *Exchange,threadCount),
 		MakeRouter(),
+		keyPath,
 	}
 
 	for i := 0; i < threadCount; i++ {
@@ -50,7 +51,7 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		rr := <- e.queue
 
-		fmt.Println("Started service ticket")
+		log.Println("Started service ticket")
 
 		// "SERVICE_TICKET:"
 
@@ -72,7 +73,7 @@ func (e *ServiceSecurityProtocol) runLoop() {
 			continue
 		}
 
-		sessionKey := service.DecryptSessionKey(encryptedSessionKey)
+		sessionKey := service.DecryptSessionKey(encryptedSessionKey,e.keyPath)
 
 		if sessionKey == nil {
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
@@ -117,10 +118,12 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		sendLine(rr.response,"RESPONSE: " + base64.StdEncoding.EncodeToString(authenticator.MakeResponse(sessionKey.Key())))
 
+		log.Println("Connection secured")
+
 		// HANDLES ENCRYPTION HERE
 
-		requestChan := make(chan byte)
-		responseChan := make(chan byte)
+		requestChan := make(chan byte,32)
+		responseChan := make(chan byte,32)
 
 		stop := false
 
@@ -155,16 +158,27 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		for status != STATUS_SUCCESS_DISCONNECT {
 
+			log.Println("Parsing secure channel")
+
 			buffer := make([]byte,0)
 
+			log.Println("Initialized buffer")
+
 			for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
+				log.Println("Found "+string(nb))
 				buffer = append(buffer,nb)
 			}
 
+			log.Println("Filled buffer")
+
 			ident := string(buffer)
+
+			log.Println("Passing "+ident+" to protocol router")
 
 			if ident != "" {
 				status = <- e.router.Route(ident,requestChan,responseChan)
+			} else {
+				log.Println("\"\" ident found")
 			}
 		}
 

@@ -77,7 +77,7 @@ func (s* SessionKey)EncryptedKey() []byte {
 	return crypto.EncryptBytes(s.key,s.user.getAESKey())
 }
 
-func (s* SessionKey)MarshalAndEncrypt() []byte {
+func (s* SessionKey)MarshalAndEncrypt(keyPath string) []byte {
 
 	expiryBytes, _ := s.expiry.MarshalText()
 
@@ -85,7 +85,7 @@ func (s* SessionKey)MarshalAndEncrypt() []byte {
 				  	"USERNAME: "+s.user.username+"\n"+
 					"EXPIRES_AT: "+string(expiryBytes)+"\n"
 
-	keyFile, _ := os.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/authentication/private.key")
+	keyFile, _ := os.Open(keyPath)
 
 	privateKey := make([]byte,32)
 	keyFile.Read(privateKey)

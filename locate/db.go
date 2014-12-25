@@ -1,15 +1,13 @@
 package locate
 
 import (
-	"os"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
 	"log"
 	)
 
 func dbConnect() *sqlite3.Conn {
 
-	wd, _ := os.Getwd()
-	db, _ := sqlite3.Open(wd+"/locate.sqlite")
+	db, _ := sqlite3.Open("locate.sqlite")
 
 	fileServers := 		"CREATE TABLE IF NOT EXISTS file_servers(" +
 							"uuid 		VARCHAR(255) PRIMARY KEY, "+

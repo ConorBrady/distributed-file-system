@@ -16,9 +16,9 @@ type SessionKey struct {
 	expiry time.Time
 }
 
-func DecryptSessionKey(encryptedPackage []byte) *SessionKey {
+func DecryptSessionKey(encryptedPackage []byte, keyPath string) *SessionKey {
 
-	keyFile, _ := os.Open(os.Getenv("GOPATH")+"/src/distributed-file-system/auth/service/private.key")
+	keyFile, _ := os.Open(keyPath)
 
 	privateKey := make([]byte,32)
 
