@@ -86,6 +86,7 @@ func main (){
 
         case "FS":
             secureProtocol := protocol.MakeServiceSecurityProtocol(4,*keyPath)
+            secureProtocol.AddProtocol(protocol.MakeRequestChecksumsProtocol(4))
             secureProtocol.AddProtocol(protocol.MakeFileReadProtocol(4))
             secureProtocol.AddProtocol(protocol.MakeFileWriteProtocol(4))
 
