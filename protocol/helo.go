@@ -57,6 +57,6 @@ func (e *Helo) runLoop() {
 		for _, b := range []byte("\nIP: "+e.ip+"\nPort: "+strconv.Itoa(e.port)+"\nStudentID: 08506426\nUUID: "+e.uuid+"\nMODE: "+e.mode+"\n") {
 			rr.response <- b
 		}
-		rr.done <- STATUS_SUCCESS_CONTINUE
+		rr.done <- STATUS_SUCCESS_DISCONNECT
 	}
 }

@@ -1,13 +1,12 @@
 package protocol
 
-import(
+import (
 	"regexp"
-	"os"
-	"fmt"
-	"bufio"
 	"log"
-	"net/url"
-	)
+	"strconv"
+
+	"github.com/conorbrady/distributed-file-system/file"
+)
 
 type FileReadProtocol struct {
 	queue chan *Exchange
@@ -53,28 +52,37 @@ func (p *FileReadProtocol)runLoop() {
 			continue
 		}
 
-		fileName := "storage/"+url.QueryEscape(matches1[1])
-		file, ok1 := os.Open(fileName)
+		// Line 2 "BLOCK_INDEX:"
+		r2, _ := regexp.Compile("\\AOFFSET:\\s*(\\d+)\\s*\\z")
+		matches2 := r2.FindStringSubmatch(readLine(rr.request))
+		if len(matches2) < 2 {
+			respondError(ERROR_MALFORMED_REQUEST,rr.response)
+			rr.done <- STATUS_ERROR
+			continue
+		}
 
-		if ok1 != nil {
+		offset, _ := strconv.Atoi(matches2[1])
+		blockIndex := offset/file.BlockSize
+
+		data, err := file.ReadData(matches1[1],blockIndex)
+
+		if err != nil {
+			log.Println(err.Error())
 			respondError(ERROR_FILE_NOT_FOUND,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
 		}
 
-		fi, _ := file.Stat()
+		block, _ := file.GetBlock(matches1[1],blockIndex)
 
-		sendLine(rr.response,fmt.Sprintf("CONTENT_LENGTH: %d",fi.Size()))
+		sendLine(rr.response, "START: "+ strconv.Itoa(blockIndex*file.BlockSize))
+		sendLine(rr.response, "HASH: "+ block.Hash())
+		sendLine(rr.response, "CONTENT_LENGTH: "+ strconv.Itoa(len(data)))
 
-		reader := bufio.NewReader(file)
-		b, err := reader.ReadByte()
-
-		for err == nil {
+		for _, b := range data {
 			rr.response <- b
-			b, err = reader.ReadByte()
 		}
 
-		sendLine(rr.response,"")
-		rr.done <- STATUS_SUCCESS_CONTINUE
+		rr.done <- STATUS_SUCCESS_DISCONNECT
 	}
 }

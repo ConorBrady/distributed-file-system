@@ -3,8 +3,8 @@ package protocol
 import (
 	"log"
 	"regexp"
-	"distributed-file-system/auth/service"
-	"distributed-file-system/auth/crypto"
+	"github.com/conorbrady/distributed-file-system/auth/service"
+	"github.com/conorbrady/distributed-file-system/auth/crypto"
 	"encoding/base64"
 )
 
@@ -125,10 +125,9 @@ func (e *ServiceSecurityProtocol) runLoop() {
 		requestChan := make(chan byte,32)
 		responseChan := make(chan byte,32)
 
-		stop := false
 
 		go func() {
-			for !stop {
+			for {
 				data := make([]byte,16)
 				for i, _ := range data {
 					b := <-responseChan
@@ -145,10 +144,9 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		go func() {
 
-			for !stop {
+			for {
 				enc, _ := base64.StdEncoding.DecodeString(readLine(rr.request))
 				for _, b := range crypto.DecryptToBytes(enc,sessionKey.Key()) {
-
 					requestChan <- b
 				}
 			}
@@ -156,34 +154,24 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		status := STATUS_UNDEFINED
 
-		for status != STATUS_SUCCESS_DISCONNECT {
+		log.Println("Parsing secure channel")
 
-			log.Println("Parsing secure channel")
+		buffer := make([]byte,0)
 
-			buffer := make([]byte,0)
-
-			log.Println("Initialized buffer")
-
-			for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
-				log.Println("Found "+string(nb))
-				buffer = append(buffer,nb)
-			}
-
-			log.Println("Filled buffer")
-
-			ident := string(buffer)
-
-			log.Println("Passing "+ident+" to protocol router")
-
-			if ident != "" {
-				status = <- e.router.Route(ident,requestChan,responseChan)
-			} else {
-				log.Println("\"\" ident found")
-			}
+		for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
+			buffer = append(buffer,nb)
 		}
 
-		stop = true
+		ident := string(buffer)
 
-		rr.done <- STATUS_SUCCESS_CONTINUE
+		log.Println("Passing "+ident+" to protocol router")
+
+		if ident != "" {
+			status = <- e.router.Route(ident,requestChan,responseChan)
+		} else {
+			log.Println("\"\" ident found")
+		}
+
+		rr.done <- status
 	}
 }

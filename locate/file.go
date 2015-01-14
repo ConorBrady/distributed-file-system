@@ -2,7 +2,8 @@ package locate
 
 import (
 	"code.google.com/p/go-sqlite/go1/sqlite3"
-	)
+)
+
 type File struct {
 	filename string
 	fileServerUUID string
@@ -11,7 +12,7 @@ type File struct {
 func getFile(name string) *File{
 
 	args := sqlite3.NamedArgs{
-		"$filename": 			name,
+		"$filename": name,
 	}
 
 	query, qErr := dbConnect().Query("select file_server_uuid from files where name=$filename", args)
@@ -36,7 +37,7 @@ func getFilesForFileServer(fs FileServer) []File {
 	f := make([]File, 0)
 
 	args := sqlite3.NamedArgs{
-		"$file_server_uuid": 	fs.uuid,
+		"$file_server_uuid": fs.uuid,
 	}
 
 	query, qErr := dbConnect().Query("select name from files where file_server_uuid=$file_server_uuid",args)

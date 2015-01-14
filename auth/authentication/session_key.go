@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 	"crypto/rand"
-	"distributed-file-system/auth/crypto"
+	"github.com/conorbrady/distributed-file-system/auth/crypto"
 	"encoding/base64"
 	"code.google.com/p/go-sqlite/go1/sqlite3"
 	)

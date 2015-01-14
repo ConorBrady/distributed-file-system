@@ -3,7 +3,8 @@ package protocol
 import(
 	"regexp"
 	"fmt"
-	"distributed-file-system/locate"
+	"log"
+	"github.com/conorbrady/distributed-file-system/locate"
 	)
 
 type LocateFileProtocol struct {
@@ -51,6 +52,7 @@ func (p *LocateFileProtocol)runLoop() {
 
 		sendLine(rr.response,fmt.Sprintf("ADDRESS: %s",address))
 
-		rr.done <- STATUS_SUCCESS_CONTINUE
+		log.Println("Responded with: "+fmt.Sprintf("ADDRESS: %s",address))
+		rr.done <- STATUS_SUCCESS_DISCONNECT
 	}
 }

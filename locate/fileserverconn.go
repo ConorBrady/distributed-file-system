@@ -14,15 +14,15 @@ func FSConnect(address string) *FileServerConn {
 
 	// File Server Communication
 
-	fileServAddr, asAddrErr := net.ResolveTCPAddr("tcp4",address)
+	fileServAddr, fsAddrErr := net.ResolveTCPAddr("tcp4",address)
 
-	if asAddrErr != nil {
+	if fsAddrErr != nil {
 		return nil
 	}
 
-	fileServConn, asConnErr := net.DialTCP("tcp4",nil,fileServAddr)
+	fileServConn, fsConnErr := net.DialTCP("tcp4",nil,fileServAddr)
 
-	if asConnErr != nil {
+	if fsConnErr != nil {
 		return nil
 	}
 

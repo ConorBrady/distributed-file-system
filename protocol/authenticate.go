@@ -3,7 +3,7 @@ package protocol
 import (
 	"regexp"
 	"log"
-	"distributed-file-system/auth/authentication"
+	"github.com/conorbrady/distributed-file-system/auth/authentication"
 	"encoding/base64"
 	)
 
@@ -65,6 +65,6 @@ func (e *AuthenticationProtocol) runLoop() {
 		sendLine(rr.response,"ENCRYPTED_SESSION_KEY: " + base64.StdEncoding.EncodeToString(sessionKey.EncryptedKey()))
 		sendLine(rr.response,"SERVICE_TICKET: "+base64.StdEncoding.EncodeToString(sessionKey.MarshalAndEncrypt(e.keyPath)))
 
-		rr.done <- STATUS_SUCCESS_CONTINUE
+		rr.done <- STATUS_SUCCESS_DISCONNECT
 	}
 }

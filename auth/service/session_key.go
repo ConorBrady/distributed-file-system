@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 	"regexp"
-	"distributed-file-system/auth/crypto"
+	"github.com/conorbrady/distributed-file-system/auth/crypto"
 	"encoding/base64"
 	"strconv"
 	)

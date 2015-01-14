@@ -5,22 +5,22 @@ import(
     "log"
     "os"
 
-    "distributed-file-system/chat"
-    "distributed-file-system/protocol"
-    "distributed-file-system/tcpserver"
-    "distributed-file-system/auth/authentication"
-    "distributed-file-system/locate"
+    "github.com/conorbrady/distributed-file-system/chat"
+    "github.com/conorbrady/distributed-file-system/protocol"
+    "github.com/conorbrady/distributed-file-system/tcpserver"
+    "github.com/conorbrady/distributed-file-system/auth/authentication"
+    "github.com/conorbrady/distributed-file-system/locate"
 
     "code.google.com/p/go-uuid/uuid"
     )
 
 func main (){
 
-    logFile, _ := os.Create("log.txt")
+    logFile, _ := os.Create("out.log")
     log.SetOutput(logFile)
 
     port := flag.Int("port",-1,"Port to listen on")
-    threadCount := flag.Int("threadCount", 100, "Available thread count")
+    threadCount := flag.Int("threadCount", 4, "Available thread count")
     mode := flag.String("mode","","Server mode, select between 'DS', 'AS' and 'FS'")
     keyPath := flag.String("key","","Private key AES256 key path")
 
@@ -31,11 +31,11 @@ func main (){
     }
 
     if *mode == "" {
-        log.Fatal("Please select mode from 'DS', 'AS' and 'FS'")
+        log.Fatal("Please select mode from 'DS', 'AS' and 'FS' with -mode")
     }
 
     if *keyPath == "" {
-        log.Fatal("Please provide private key")
+        log.Fatal("Please provide private key with -key")
     }
 
     wd, _ := os.Getwd()
@@ -63,31 +63,31 @@ func main (){
 
     chat := chat.MakeChat()
 
-    tcpServer.AddProtocol(protocol.MakeHelo(os.Getenv("IP_ADDRESS"),*port,100,*mode,string(uuid)))
+    tcpServer.AddProtocol(protocol.MakeHelo(os.Getenv("IP_ADDRESS"),*port,4,*mode,string(uuid)))
 
-    tcpServer.AddProtocol(protocol.MakeChatJoinProtocol(chat,100))
-    tcpServer.AddProtocol(protocol.MakeChatLeaveProtocol(chat,100))
-    tcpServer.AddProtocol(protocol.MakeChatMessageProtocol(chat,100))
+    tcpServer.AddProtocol(protocol.MakeChatJoinProtocol(chat,4))
+    tcpServer.AddProtocol(protocol.MakeChatLeaveProtocol(chat,4))
+    tcpServer.AddProtocol(protocol.MakeChatMessageProtocol(chat,4))
     tcpServer.AddProtocol(protocol.MakeDisconnectProtocol(chat,1))
 
     switch *mode {
         case "AS":
-            tcpServer.AddProtocol(protocol.MakeAuthenticationProtocol(100,*keyPath))
+            tcpServer.AddProtocol(protocol.MakeAuthenticationProtocol(4,*keyPath))
 
             go authentication.RunManagement()
 
         case "DS":
-            secureProtocol := protocol.MakeServiceSecurityProtocol(100,*keyPath)
-            secureProtocol.AddProtocol(protocol.MakeLocateFileProtocol(100))
+            secureProtocol := protocol.MakeServiceSecurityProtocol(4,*keyPath)
+            secureProtocol.AddProtocol(protocol.MakeLocateFileProtocol(4))
 
             tcpServer.AddProtocol(secureProtocol)
 
             go locate.RunManagement()
 
         case "FS":
-            secureProtocol := protocol.MakeServiceSecurityProtocol(100,*keyPath)
-            secureProtocol.AddProtocol(protocol.MakeFileReadProtocol(100))
-            secureProtocol.AddProtocol(protocol.MakeFileWriteProtocol(100))
+            secureProtocol := protocol.MakeServiceSecurityProtocol(4,*keyPath)
+            secureProtocol.AddProtocol(protocol.MakeFileReadProtocol(4))
+            secureProtocol.AddProtocol(protocol.MakeFileWriteProtocol(4))
 
             tcpServer.AddProtocol(secureProtocol)
 

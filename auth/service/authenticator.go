@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"log"
 	"encoding/base64"
-	"distributed-file-system/auth/crypto"
+	"github.com/conorbrady/distributed-file-system/auth/crypto"
 	)
 
 type Authenticator struct {

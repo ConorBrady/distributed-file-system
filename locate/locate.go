@@ -2,23 +2,44 @@ package locate
 
 import (
 	"math/rand"
+	"log"
 	)
 
 func LocateFile(filename string) string {
 
-	file := getFile(filename)
+	log.Println("Locating "+filename)
 
-	if file != nil {
+	if file := getFile(filename); file != nil {
 
-		return getFileServer(file.fileServerUUID).address
+		fs := getFileServer(file.fileServerUUID)
 
-	} else {
+		if *FSConnect(fs.address).getUUID() == file.fileServerUUID { // Is that server at that address
 
-		fss := getFileServers()
-		fs := fss[rand.Int()%len(fss)]
+			log.Println("File found at "+fs.address)
 
-		file := createFile(filename,fs)
+			return fs.address
 
-		return getFileServer(file.fileServerUUID).address
+		} else {
+
+			log.Println("Server gone, deleting records")
+
+			deleteFileServer(fs.uuid)
+		}
 	}
+
+	log.Println("Allocating file location")
+
+	fss := getFileServers()
+	fs := fss[rand.Int()%len(fss)]
+
+	for FSConnect(fs.address) == nil {
+
+		deleteFileServer(fs.uuid)
+		fss = getFileServers()
+		fs = fss[rand.Int()%len(fss)]
+	}
+
+	file := createFile(filename,fs)
+
+	return getFileServer(file.fileServerUUID).address
 }

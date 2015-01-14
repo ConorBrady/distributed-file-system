@@ -6,6 +6,9 @@ import (
 	"runtime/debug"
 )
 
+// Yes I rewrote a reader wrapper around channels, this was a mistake, one I have
+// learned a lesson from.
+
 func read(input <-chan byte, delim byte) string {
 	token := make([]byte,0)
 	for msgByte := range input {

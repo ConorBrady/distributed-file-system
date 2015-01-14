@@ -2,7 +2,7 @@ package protocol
 
 import(
 	"regexp"
-	"distributed-file-system/chat"
+	"github.com/conorbrady/distributed-file-system/chat"
 	"fmt"
 	"strconv"
 	)

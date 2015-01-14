@@ -6,7 +6,7 @@ import(
     "bufio"
     "log"
     "strconv"
-    "distributed-file-system/protocol"
+    "github.com/conorbrady/distributed-file-system/protocol"
     )
 
 type TCPServer struct {
@@ -96,8 +96,6 @@ func (server *TCPServer) connectionHandler() {
 
         for status != protocol.STATUS_SUCCESS_DISCONNECT {
 
-            log.Println("Parsing for ident")
-
             buffer := make([]byte,0)
 
             for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
@@ -118,6 +116,5 @@ func (server *TCPServer) connectionHandler() {
             }
         }
 
-        tcpConn.Close()
     }
 }

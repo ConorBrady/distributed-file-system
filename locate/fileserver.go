@@ -83,3 +83,14 @@ func createFileServer(address string, uuid string) bool {
 
 	return err == nil
 }
+
+
+func deleteFileServer(uuid string) {
+
+	args := sqlite3.NamedArgs{
+		"$uuid": uuid,
+	}
+
+	dbConnect().Exec("delete from file_servers where uuid = $uuid", args)
+
+}

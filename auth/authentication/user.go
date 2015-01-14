@@ -12,6 +12,10 @@ type User struct {
 	password string
 }
 
+func GetUser(username string) *User {
+	return getUser(username)
+}
+
 func getUsers() []User {
 
 	users := make([]User, 0)
@@ -37,7 +41,7 @@ func getUsers() []User {
 	return users
 }
 
-func GetUser(username string) *User{
+func getUser(username string) *User{
 
 	args := sqlite3.NamedArgs{
 		"$username": username,
@@ -64,19 +68,27 @@ func GetUser(username string) *User{
 
 func createUser(username string, password string) *User {
 
-	args := sqlite3.NamedArgs{
-		"$username": username,
-		"$password": password,
+	if username != "" && password != "" {
+
+		args := sqlite3.NamedArgs{
+			"$username": username,
+			"$password": password,
+		}
+
+		dbConnect().Exec("insert into users ( username, password ) values ( $username, $password )", args)
+
+		return getUser(username)
+
+	} else {
+
+		return nil
 	}
 
-	dbConnect().Exec("insert into users ( username, password ) values ( $username, $password )", args)
-
-	return GetUser(username)
 }
 
 func deleteUser(username string) {
 
-	user := GetUser(username)
+	user := getUser(username)
 
 	if user != nil {
 		args := sqlite3.NamedArgs{
