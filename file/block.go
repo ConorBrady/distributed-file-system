@@ -40,7 +40,6 @@ func getBlock(filename string, index int) (*Block, error) {
 	var hash string
 
 	query.Scan(&hash)
-	fmt.Println(hash)
 	query.Close()
 
 	return &Block{

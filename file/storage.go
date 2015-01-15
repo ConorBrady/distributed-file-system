@@ -4,13 +4,15 @@ import (
 
 	"os"
 	"errors"
-
+	"log"
 	"crypto/sha1"
 	"encoding/hex"
 	"io/ioutil"
 )
 
 func ReadData(filename string, index int) ([]byte, error) {
+
+	os.Mkdir("storage",0777)
 
 	if block, err := getBlock(filename,index); err == nil {
 		return ioutil.ReadFile("storage/"+block.hash)
@@ -21,12 +23,15 @@ func ReadData(filename string, index int) ([]byte, error) {
 
 func WriteData(filename string, start int, data []byte) error {
 
+	os.Mkdir("storage",0777)
+
 	index := start/BlockSize
 
 	// If its not the first and it has no proceeding block it is invalid
 	if index != 0 {
 		oldBlock, _ := getBlock(filename, index-1)
 	 	if oldBlock == nil {
+			log.Println("WARNING: Attempted to print non-contiguous block")
 			return errors.New("Cannot create non-contiguous block")
 		}
 	}
@@ -41,6 +46,7 @@ func WriteData(filename string, start int, data []byte) error {
 
 			file, fiErr := os.Open("storage/"+oldBlock.hash)
 			if fiErr != nil {
+				log.Println("Error opening old block: "+fiErr.Error())
 				return fiErr
 			}
 			file.Read(buffer)
@@ -62,16 +68,22 @@ func WriteData(filename string, start int, data []byte) error {
 			err := ioutil.WriteFile("storage/"+hash, buffer, 0777)
 
 			if err != nil {
+				log.Println("Error writing new block: "+err.Error())
 				return err
 			}
 		}
 
 		if oldBlock == nil {
 
-			createBlock(filename,index,hash)
+			log.Println("Creating new block")
+			if err := createBlock(filename,index,hash); err != nil {
+				log.Println("An error occured creating block: "+err.Error())
+				return err
+			}
 
 		} else if oldBlock.hash != hash {
 
+			log.Println("Updating database for new block")
 			os.Remove("storage/"+oldBlock.hash)
 
 			oldBlock.setHash(hash)

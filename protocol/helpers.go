@@ -2,7 +2,8 @@ package protocol
 
 import (
 	"fmt"
-	"io"
+	"log"
+	"bytes"
 	"runtime/debug"
 )
 
@@ -17,6 +18,7 @@ func read(input <-chan byte, delim byte) string {
 		}
 		token = append(token,msgByte)
 	}
+	token = bytes.Trim(token,"\x00")
 	return string(token)
 }
 
@@ -34,7 +36,9 @@ func readByteCount(input <-chan byte, count int) []byte {
 }
 
 func readLine(input <-chan byte) string {
-	return read(input,'\n')
+	line := read(input,'\n')
+	log.Println(line)
+	return line
 }
 
 func send(output chan<- byte, text string) {
@@ -44,51 +48,18 @@ func send(output chan<- byte, text string) {
 }
 
 func sendLine(output chan<- byte, text string) {
+	log.Println(text)
 	send(output,text+"\n")
 }
 
-type ChannelWriter struct {
-	channel chan<- byte
-}
-
-func MakeChannelWriter(channel chan<- byte) *ChannelWriter {
-	c := &ChannelWriter{
-		channel,
-	}
-	return c
-}
-
-func (c* ChannelWriter)Write(p []byte) (n int, err error) {
-	fmt.Println("Called writer")
-	for _, b := range p {
-		fmt.Println("Sending "+string(b))
-		c.channel <- b
-	}
-	return len(p), nil
-}
-
-type ChannelReader struct {
-	channel <-chan byte
-}
-
-func MakeChannelReader(channel <-chan byte) *ChannelReader {
-	c := &ChannelReader{
-		channel,
-	}
-	return c
-}
-
-func (c* ChannelReader)Read(p []byte) (n int, err error) {
-	for i := 0; i < len(p); i++ {
-		b := <- c.channel
-		if b == ' ' || b == '\n' {
-			fmt.Println("End of file")
-			return i-1, io.EOF
-		} else {
-			p[i] = b
+func syncToToken(input <-chan byte, token string) {
+	for _, r := range []byte(token) {
+		for b := range input {
+			if b == r {
+				break
+			}
 		}
 	}
-	return len(p), nil
 }
 
 func respondError(errorCode ErrorCode, output chan<- byte) {

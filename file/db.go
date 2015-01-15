@@ -12,7 +12,7 @@ func dbConnect() *sqlite3.Conn {
 	blockCheck := 	"CREATE TABLE IF NOT EXISTS blocks(" +
 						"filename 		VARCHAR(255) NOT NULL, "+
 						"block_index	INTEGER, "+
-						"hash 			VARCHAR(255) NOT NULL UNIQUE, "+
+						"hash 			VARCHAR(255) NOT NULL, "+
 						"PRIMARY KEY( filename, block_index ))"
 
 	if err := db.Exec(blockCheck); err != nil {

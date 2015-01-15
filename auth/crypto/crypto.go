@@ -39,9 +39,9 @@ func DecryptToBytes(enc []byte, key []byte) []byte {
 		cipherBlock.Decrypt(data[i:i+aes.BlockSize], enc[i:i+aes.BlockSize])
 	}
 
-	return bytes.Trim(data,"\x00")
+	return data
 }
 
 func DecryptToString(enc []byte, key []byte) string {
-	return string(DecryptToBytes(enc,key))
+	return string(bytes.Trim(DecryptToBytes(enc,key),"\x00"))
 }

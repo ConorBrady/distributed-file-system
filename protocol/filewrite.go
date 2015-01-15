@@ -46,6 +46,7 @@ func (p *FileWriteProtocol)runLoop() {
 		r1, _ := regexp.Compile("\\A\\s*(\\S+)\\s*\\z")
 		matches1 := r1.FindStringSubmatch(line)
 		if len(matches1) < 2 {
+			log.Printf("Got string post WRITE FILE %q",line)
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
@@ -54,9 +55,10 @@ func (p *FileWriteProtocol)runLoop() {
 		// Line 2 "START:"
 		line = readLine(rr.request)
 		log.Println(line)
-		r2, _ := regexp.Compile("\\ASTART\\s*:\\s*(\\d+)\\s*\\z")
+		r2, _ := regexp.Compile("\\A\\s*START\\s*:\\s*(\\d+)\\s*\\z")
 		matches2 := r2.FindStringSubmatch(line)
 		if len(matches2) < 2 {
+			log.Printf("Got string to WRITE FILE %q",line)
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
 			continue
@@ -68,7 +70,7 @@ func (p *FileWriteProtocol)runLoop() {
 
 		line = readLine(rr.request)
 		log.Println(line)
-		r3, _ := regexp.Compile("\\ACONTENT_LENGTH\\s*:\\s*(\\d+)\\s*\\z")
+		r3, _ := regexp.Compile("\\A\\s*CONTENT_LENGTH\\s*:\\s*(\\d+)\\s*\\z")
 		matches3 := r3.FindStringSubmatch(line)
 		if len(matches3) < 2 {
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
@@ -78,7 +80,10 @@ func (p *FileWriteProtocol)runLoop() {
 
 		contentLength, _ := strconv.Atoi(matches3[1])
 
+		syncToToken(rr.request,"DATA:")
+
 		data := readByteCount(rr.request,contentLength)
+		log.Println("Data recieved")
 		log.Println(string(data))
 
 		if err := file.WriteData(matches1[1],start,data); err != nil {

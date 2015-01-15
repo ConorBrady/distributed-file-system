@@ -53,8 +53,10 @@ func (p *FileReadProtocol)runLoop() {
 		}
 
 		// Line 2 "BLOCK_INDEX:"
+		line = readLine(rr.request)
+		log.Println(line)
 		r2, _ := regexp.Compile("\\AOFFSET:\\s*(\\d+)\\s*\\z")
-		matches2 := r2.FindStringSubmatch(readLine(rr.request))
+		matches2 := r2.FindStringSubmatch(line)
 		if len(matches2) < 2 {
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
 			rr.done <- STATUS_ERROR
