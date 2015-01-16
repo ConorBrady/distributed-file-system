@@ -128,17 +128,17 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		go func() {
 			for {
-				data := make([]byte,16)
-				for i, _ := range data {
+				data := make([]byte,64)
+				for i := 1; i < len(data); i++ {
 					b := <-responseChan
 					data[i] = b
-
+					data[0] = byte(i) // First byte indicates length of data
 					if b == '\n' {
 						break
 					}
 				}
 				enc := crypto.EncryptBytes(data,sessionKey.Key())
-				sendLine(rr.response,base64.StdEncoding.EncodeToString(enc)+"\n")
+				sendLine(rr.response,base64.StdEncoding.EncodeToString(enc))
 			}
 		}()
 
@@ -146,8 +146,9 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 			for {
 				enc, _ := base64.StdEncoding.DecodeString(readLine(rr.request))
-				for _, b := range crypto.DecryptToBytes(enc,sessionKey.Key()) {
-					requestChan <- b
+				data := crypto.DecryptToBytes(enc,sessionKey.Key())
+				for i := 1; i <= int(data[0]); i++ {
+					requestChan <- data[i]
 				}
 			}
 		}()

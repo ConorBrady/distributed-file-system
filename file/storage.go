@@ -15,7 +15,8 @@ func ReadData(filename string, index int) ([]byte, error) {
 	os.Mkdir("storage",0777)
 
 	if block, err := getBlock(filename,index); err == nil {
-		return ioutil.ReadFile("storage/"+block.hash)
+		data, _ := ioutil.ReadFile("storage/"+block.hash)
+		return data[ :block.size], nil
 	} else {
 		return nil, err
 	}
@@ -25,12 +26,12 @@ func WriteData(filename string, start int, data []byte) error {
 
 	os.Mkdir("storage",0777)
 
-	index := start/BlockSize
+	index := start/MAX_BLOCK_SIZE
 
-	// If its not the first and it has no proceeding block it is invalid
+	// If its not the first and it has no proceeding full block it is invalid
 	if index != 0 {
 		oldBlock, _ := getBlock(filename, index-1)
-	 	if oldBlock == nil {
+	 	if oldBlock == nil || oldBlock.size != MAX_BLOCK_SIZE {
 			log.Println("WARNING: Attempted to print non-contiguous block")
 			return errors.New("Cannot create non-contiguous block")
 		}
@@ -38,7 +39,7 @@ func WriteData(filename string, start int, data []byte) error {
 
 	// Loop here for writes across blocks
 	{
-		buffer := make([]byte,BlockSize)
+		buffer := make([]byte,MAX_BLOCK_SIZE)
 
 		oldBlock, blErr := getBlock(filename, index)
 
@@ -53,7 +54,8 @@ func WriteData(filename string, start int, data []byte) error {
 			file.Close()
 		}
 
-		offset := start%BlockSize
+		offset := start%MAX_BLOCK_SIZE
+		writeEnd := offset+len(data)
 
 		for i := 0; i < len(data) && i+offset < len(buffer); i++ {
 			buffer[i+offset] = data[i]
@@ -76,7 +78,7 @@ func WriteData(filename string, start int, data []byte) error {
 		if oldBlock == nil {
 
 			log.Println("Creating new block")
-			if err := createBlock(filename,index,hash); err != nil {
+			if err := createBlock(filename,index,hash,writeEnd); err != nil {
 				log.Println("An error occured creating block: "+err.Error())
 				return err
 			}
@@ -87,6 +89,10 @@ func WriteData(filename string, start int, data []byte) error {
 			os.Remove("storage/"+oldBlock.hash)
 
 			oldBlock.setHash(hash)
+
+			if oldBlock.size < writeEnd {
+				oldBlock.setSize(writeEnd)
+			}
 		}
 
 	}

@@ -6,12 +6,13 @@ import (
 	"log"
 )
 
-const BlockSize = 4096
+const MAX_BLOCK_SIZE = 4096
 
 type Block struct {
 	filename string
 	index int
 	hash string
+	size int
 }
 
 func (b *Block)Hash() string {
@@ -30,7 +31,7 @@ func getBlock(filename string, index int) (*Block, error) {
 		"$index"	: index,
 	}
 
-	query, qErr := dbConnect().Query("select hash from blocks where filename = $filename and block_index = $index",args)
+	query, qErr := dbConnect().Query("select hash, size from blocks where filename = $filename and block_index = $index",args)
 
 	if qErr != nil {
 		log.Println("Block lookup failed with error: "+qErr.Error())
@@ -38,14 +39,16 @@ func getBlock(filename string, index int) (*Block, error) {
 	}
 
 	var hash string
+	var size int
 
-	query.Scan(&hash)
+	query.Scan(&hash,&size)
 	query.Close()
 
 	return &Block{
 		filename,
 		index,
 		hash,
+		size,
 	}, nil
 }
 
@@ -56,16 +59,31 @@ func (b* Block)setHash(hash string) error {
 		"$newHash"	: hash,
 	}
 
+	b.hash = hash
+
 	return dbConnect().Exec("update blocks set hash = $newHash where hash = $oldHash", args)
 }
 
-func createBlock(filename string, index int, hash string) error {
+func (b* Block)setSize(size int) error {
+
+	args := sqlite3.NamedArgs{
+		"$hash"	: b.hash,
+		"$size" : size,
+	}
+
+	b.size = size
+
+	return dbConnect().Exec("update blocks set size = $size where hash = $hash", args)
+}
+
+func createBlock(filename string, index int, hash string, size int) error {
 
 	args := sqlite3.NamedArgs{
 		"$filename" : filename,
 		"$index"	: index,
 		"$hash"		: hash,
+		"$size"		: size,
 	}
 
-	return dbConnect().Exec("insert into blocks (filename, block_index, hash) values ($filename, $index, $hash) ", args)
+	return dbConnect().Exec("insert into blocks (filename, block_index, hash, size) values ($filename, $index, $hash, $size) ", args)
 }

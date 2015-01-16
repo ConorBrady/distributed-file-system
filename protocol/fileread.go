@@ -64,7 +64,7 @@ func (p *FileReadProtocol)runLoop() {
 		}
 
 		offset, _ := strconv.Atoi(matches2[1])
-		blockIndex := offset/file.BlockSize
+		blockIndex := offset/file.MAX_BLOCK_SIZE
 
 		data, err := file.ReadData(matches1[1],blockIndex)
 
@@ -77,13 +77,15 @@ func (p *FileReadProtocol)runLoop() {
 
 		block, _ := file.GetBlock(matches1[1],blockIndex)
 
-		sendLine(rr.response, "START: "+ strconv.Itoa(blockIndex*file.BlockSize))
+		sendLine(rr.response, "START: "+ strconv.Itoa(blockIndex*file.MAX_BLOCK_SIZE))
 		sendLine(rr.response, "HASH: "+ block.Hash())
 		sendLine(rr.response, "CONTENT_LENGTH: "+ strconv.Itoa(len(data)))
 
 		for _, b := range data {
 			rr.response <- b
 		}
+
+		rr.response <- '\n'
 
 		rr.done <- STATUS_SUCCESS_DISCONNECT
 	}

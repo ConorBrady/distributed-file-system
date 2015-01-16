@@ -95,8 +95,8 @@ func (p *FileWriteProtocol)runLoop() {
 
 		log.Println("Wrote "+matches1[1])
 
-		block, _ := file.GetBlock(matches1[1],start/file.BlockSize)
-		sendLine(rr.response, "WROTE_BLOCK:"+strconv.Itoa(start/file.BlockSize))
+		block, _ := file.GetBlock(matches1[1],start/file.MAX_BLOCK_SIZE)
+		sendLine(rr.response, "WROTE_BLOCK:"+strconv.Itoa(start/file.MAX_BLOCK_SIZE))
 		sendLine(rr.response, "HASH: "+ block.Hash())
 
 		rr.done <- STATUS_SUCCESS_DISCONNECT

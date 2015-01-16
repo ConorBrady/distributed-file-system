@@ -13,6 +13,7 @@ func dbConnect() *sqlite3.Conn {
 						"filename 		VARCHAR(255) NOT NULL, "+
 						"block_index	INTEGER, "+
 						"hash 			VARCHAR(255) NOT NULL, "+
+						"size			INTEGER NOT NULL, "+
 						"PRIMARY KEY( filename, block_index ))"
 
 	if err := db.Exec(blockCheck); err != nil {
