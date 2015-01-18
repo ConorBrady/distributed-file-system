@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"fmt"
-	"log"
 	"bytes"
 	"runtime/debug"
 )
@@ -37,7 +36,6 @@ func readByteCount(input <-chan byte, count int) []byte {
 
 func readLine(input <-chan byte) string {
 	line := read(input,'\n')
-	log.Println(line)
 	return line
 }
 
@@ -48,7 +46,6 @@ func send(output chan<- byte, text string) {
 }
 
 func sendLine(output chan<- byte, text string) {
-	log.Println(text)
 	send(output,text+"\n")
 }
 

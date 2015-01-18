@@ -51,8 +51,6 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		rr := <- e.queue
 
-		log.Println("Started service ticket")
-
 		// "SERVICE_TICKET:"
 
 		r1, _ := regexp.Compile("\\A\\s*(\\S+)\\s*\\z")
@@ -81,7 +79,6 @@ func (e *ServiceSecurityProtocol) runLoop() {
 			continue
 		}
 
-		log.Println("Waiting on authenticator")
 		// "AUTHENTICATOR:"
 		r2, _ := regexp.Compile("\\AAUTHENTICATOR:\\s*(\\S+)\\s*\\z")
 		matches2 := r2.FindStringSubmatch(readLine(rr.request))
@@ -90,7 +87,6 @@ func (e *ServiceSecurityProtocol) runLoop() {
 			rr.done <- STATUS_ERROR
 			continue
 		}
-		log.Println("Authenticator recieved")
 
 		encryptedAuthenticator, encAuthErr := base64.StdEncoding.DecodeString(matches2[1])
 
@@ -100,9 +96,7 @@ func (e *ServiceSecurityProtocol) runLoop() {
 			continue
 		}
 
-		log.Println("Decrypting authenticator")
 		authenticator := service.DecryptAuthenticator(encryptedAuthenticator, sessionKey.Key())
-		log.Println("Authenticator decrypted")
 
 		if authenticator == nil {
 			respondError(ERROR_MALFORMED_REQUEST,rr.response)
@@ -118,7 +112,7 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		sendLine(rr.response,"RESPONSE: " + base64.StdEncoding.EncodeToString(authenticator.MakeResponse(sessionKey.Key())))
 
-		log.Println("Connection secured")
+		log.Println("SECURE_CONNECTION_START")
 
 		// HANDLES ENCRYPTION HERE
 
@@ -155,8 +149,6 @@ func (e *ServiceSecurityProtocol) runLoop() {
 
 		status := STATUS_UNDEFINED
 
-		log.Println("Parsing secure channel")
-
 		buffer := make([]byte,0)
 
 		for nb := <- requestChan; nb != '\n' && nb != ' ' && nb != ':' && nb != '\r'; nb = <- requestChan {
@@ -172,6 +164,8 @@ func (e *ServiceSecurityProtocol) runLoop() {
 		} else {
 			log.Println("\"\" ident found")
 		}
+
+		log.Println("SECURE_CONNECTION_END")
 
 		rr.done <- status
 	}

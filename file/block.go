@@ -2,7 +2,6 @@ package file
 
 import (
 	"code.google.com/p/go-sqlite/go1/sqlite3"
-	"fmt"
 	"log"
 )
 
@@ -25,7 +24,6 @@ func GetBlock(filename string, index int) (*Block, error) {
 
 func getBlock(filename string, index int) (*Block, error) {
 
-	log.Println(fmt.Sprintf("Looking up block for %s and index %d", filename, index ))
 	args := sqlite3.NamedArgs{
 		"$filename"	: filename,
 		"$index"	: index,
