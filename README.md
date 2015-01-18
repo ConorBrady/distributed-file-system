@@ -2,7 +2,7 @@
 This is the server implementation to match the [Client Library](http://github.com/conorbrady/dfs-client).
 
 ## Setup Instructions
-1. Setup Go
+1. Setup Go >=1.3.3
 	1. [Install Go](https://golang.org/doc/install)
 	2. Navigate to a directory that will contain your Go directory
 	3. Create the folder hierarchy
