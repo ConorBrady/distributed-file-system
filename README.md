@@ -36,7 +36,7 @@ generate:
 
 * **out.log** - A log of the servers operations
 
-* ***.sqlite** - A database used by each server for its own purposes
+* **.sqlite** - A database used by each server for its own purposes
 
 * In addition the Fileserver will generate **storage/** for storing files
 
